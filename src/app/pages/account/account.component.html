@@ -1,0 +1,273 @@
+<div class="account-page">
+  <!-- PAGE HEADER -->
+  <div class="account-header">
+    <div class="breadcrumb">
+      <a routerLink="/">Home</a>
+      <span>›</span>
+      <span>My Account</span>
+    </div>
+    <div class="header-content">
+      <div>
+        <h1>Welcome, <em>{{ auth.currentUser()?.name }}</em></h1>
+        <p class="user-email">{{ auth.currentUser()?.email }}</p>
+      </div>
+      <div class="header-actions">
+        <a class="admin-pill" routerLink="/admin" *ngIf="auth.isAdmin()">
+          ⚙ Admin Portal
+        </a>
+        <button class="logout-btn" (click)="logout()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="account-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'orders'"
+      (click)="activeTab = 'orders'"
+    >
+      📦 Orders ({{ orders.length }})
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'addresses'"
+      (click)="activeTab = 'addresses'"
+    >
+      📍 Saved Addresses ({{ addresses.length }})
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'profile'"
+      (click)="activeTab = 'profile'"
+    >
+      👤 Personal Profile
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'payments'"
+      (click)="activeTab = 'payments'"
+    >
+      💳 Payment Methods
+    </button>
+  </div>
+
+  <!-- TAB CONTENT -->
+  <div class="tab-content">
+    <!-- 1. ORDERS TAB -->
+    <div class="orders-tab" *ngIf="activeTab === 'orders'">
+      <div class="tab-header">
+        <h2>Order History & Invoices</h2>
+        <p>Review past purchases, download invoices, or submit exchange requests.</p>
+      </div>
+
+      <div class="empty-state" *ngIf="orders.length === 0">
+        <div class="empty-icon">🛍</div>
+        <h3>No orders placed yet</h3>
+        <p>Explore our latest couture collections and discover timeless modest designs.</p>
+        <a routerLink="/" class="btn-primary">Discover Abayas</a>
+      </div>
+
+      <div class="orders-list" *ngIf="orders.length > 0">
+        <div class="order-card" *ngFor="let o of orders">
+          <div class="order-card-top">
+            <div>
+              <span class="order-num">#{{ o.orderNumber || o.id?.substring(0, 8) }}</span>
+              <span class="order-date">{{ getOrderDate(o) ? (getOrderDate(o) | date:'mediumDate') : 'Recently' }}</span>
+            </div>
+            <div class="status-wrap">
+              <span class="status-badge" [attr.data-status]="(o.status || 'pending').toLowerCase()">{{ o.status }}</span>
+              <span class="return-pill" *ngIf="o.returnRequested">Return Requested</span>
+            </div>
+          </div>
+
+          <!-- THUMBNAILS PREVIEW -->
+          <div class="order-items-preview">
+            <div class="item-thumb" *ngFor="let item of o.items">
+              <img [src]="item.imageUrl" [alt]="item.name">
+              <span class="qty-bubble" *ngIf="(item.quantity || 1) > 1">{{ item.quantity }}</span>
+            </div>
+            <div class="order-info-brief">
+              <p><strong>{{ o.items.length }} {{ o.items.length === 1 ? 'Piece' : 'Pieces' }}</strong></p>
+              <p class="order-total">Total: <strong>₹{{ o.total | number }}</strong></p>
+              <p class="pay-label">via {{ o.paymentLabel }}</p>
+            </div>
+          </div>
+
+          <div class="order-card-actions">
+            <a [routerLink]="['/order', o.id]" class="btn-view-order">
+              View Order Details & Invoice →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ADDRESSES TAB -->
+    <div class="addresses-tab" *ngIf="activeTab === 'addresses'">
+      <div class="tab-header flex-between">
+        <div>
+          <h2>Delivery Addresses</h2>
+          <p>Manage multiple delivery destinations for seamless luxury shopping.</p>
+        </div>
+        <button class="btn-primary" (click)="openAddAddress()">+ Add New Address</button>
+      </div>
+
+      <div class="empty-state" *ngIf="addresses.length === 0">
+        <div class="empty-icon">📍</div>
+        <h3>No saved addresses</h3>
+        <p>Add a shipping address to enjoy accelerated one-click checkout.</p>
+        <button class="btn-primary" (click)="openAddAddress()">Add Address</button>
+      </div>
+
+      <div class="addresses-grid" *ngIf="addresses.length > 0">
+        <div class="address-card" *ngFor="let addr of addresses" [class.is-default]="addr.isDefault">
+          <div class="addr-header">
+            <h4>{{ addr.fullName }}</h4>
+            <span class="default-tag" *ngIf="addr.isDefault">Default</span>
+          </div>
+          <p class="addr-phone">📞 {{ addr.phone }}</p>
+          <p class="addr-lines">{{ addr.addressLine1 }}</p>
+          <p class="addr-lines" *ngIf="addr.addressLine2">{{ addr.addressLine2 }}</p>
+          <p class="addr-lines">{{ addr.city }}, {{ addr.state }} – {{ addr.postalCode }}</p>
+          <p class="addr-lines">{{ addr.country }}</p>
+
+          <div class="addr-actions">
+            <button class="text-btn" *ngIf="!addr.isDefault" (click)="setDefaultAddress(addr.id)">
+              Set as Default
+            </button>
+            <button class="text-btn" (click)="openEditAddress(addr)">Edit</button>
+            <button class="text-btn text-danger" (click)="deleteAddress(addr.id)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. PROFILE TAB -->
+    <div class="profile-tab" *ngIf="activeTab === 'profile'">
+      <div class="tab-header">
+        <h2>Personal Profile</h2>
+        <p>Update your contact information and preferences.</p>
+      </div>
+
+      <div class="success-alert" *ngIf="profileSuccess">
+        ✓ {{ profileSuccess }}
+      </div>
+      <div class="error-alert" *ngIf="profileError">
+        ✕ {{ profileError }}
+      </div>
+
+      <div class="profile-form-card">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" [(ngModel)]="profileName" placeholder="Your name">
+        </div>
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" [value]="auth.currentUser()?.email" disabled class="disabled-input">
+          <span class="hint">Email address is managed securely by Firebase Auth.</span>
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" [(ngModel)]="profilePhone" placeholder="+91 98765 43210">
+        </div>
+
+        <button
+          class="btn-primary"
+          (click)="updateProfile()"
+          [disabled]="profileUpdating || !profileName.trim()"
+        >
+          {{ profileUpdating ? 'Saving...' : 'Save Profile Changes' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. PAYMENTS TAB -->
+    <div class="payments-tab" *ngIf="activeTab === 'payments'">
+      <div class="tab-header flex-between">
+        <div>
+          <h2>Payment Preferences</h2>
+          <p>Saved payment options for swift transactions.</p>
+        </div>
+        <button class="btn-primary" (click)="toggleAddPayment()">
+          {{ showAddPaymentForm ? 'Cancel' : '+ Add Method' }}
+        </button>
+      </div>
+
+      <div class="add-form-card" *ngIf="showAddPaymentForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Payment Mode</label>
+            <select [(ngModel)]="newType">
+              <option value="card">Credit / Debit Card</option>
+              <option value="upi">UPI / QR</option>
+              <option value="cod">Cash on Delivery</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Card / Wallet Label</label>
+            <input [(ngModel)]="newLabel" placeholder="e.g. HDFC Millennia">
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="newType === 'card'">
+          <div class="form-group">
+            <label>Card Number</label>
+            <input [(ngModel)]="newCardNumber" placeholder="•••• •••• •••• 1234">
+          </div>
+          <div class="form-group">
+            <label>Card Brand</label>
+            <select [(ngModel)]="newBrand">
+              <option value="Visa">Visa</option>
+              <option value="Mastercard">Mastercard</option>
+              <option value="RuPay">RuPay</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="newType === 'upi'">
+          <label>UPI ID</label>
+          <input [(ngModel)]="newUpiId" placeholder="name@okaxis">
+        </div>
+
+        <div class="error-alert" *ngIf="formError">{{ formError }}</div>
+        <button class="btn-primary" (click)="addPaymentMethod()">Save Method</button>
+      </div>
+
+      <div class="empty-state" *ngIf="payment.paymentMethods().length === 0 && !showAddPaymentForm">
+        <div class="empty-icon">💳</div>
+        <h3>No saved payment methods</h3>
+        <p>Add a payment method to speed up checkout.</p>
+      </div>
+
+      <div class="methods-grid" *ngIf="payment.paymentMethods().length > 0">
+        <div class="method-card" *ngFor="let method of payment.paymentMethods()">
+          <div class="method-details">
+            <span class="m-type">{{ method.type | uppercase }}</span>
+            <h4>{{ method.label }}</h4>
+            <p>{{ getMethodDisplay(method) }}</p>
+            <span class="default-tag" *ngIf="method.isDefault">Default</span>
+          </div>
+          <div class="method-actions">
+            <button class="text-btn" *ngIf="!method.isDefault" (click)="payment.setDefault(method.id)">
+              Set Default
+            </button>
+            <button class="text-btn text-danger" (click)="payment.removeMethod(method.id)">
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADDRESS MODAL -->
+  <app-address-form
+    *ngIf="showAddressModal"
+    [initialAddress]="editingAddress"
+    (save)="onSaveAddress($event)"
+    (cancel)="showAddressModal = false"
+  ></app-address-form>
+</div>

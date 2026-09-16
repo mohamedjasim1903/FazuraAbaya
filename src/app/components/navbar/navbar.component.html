@@ -1,0 +1,124 @@
+<nav class="navbar">
+  <div class="nav-container">
+    
+    <!-- MOBILE HAMBURGER BUTTON -->
+    <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- BRAND LOGO -->
+    <a routerLink="/" class="logo-wrap" (click)="closeMobileMenu()">
+      <span class="logo-symbol">✦</span>
+      <div class="logo-text">
+        <span class="brand-name">FAZURA</span>
+        <span class="brand-sub">ABAYA</span>
+      </div>
+    </a>
+
+    <!-- DESKTOP NAV LINKS -->
+    <div class="nav-links desktop-only">
+      <a routerLink="/" fragment="collections" class="nav-link">Collections</a>
+      <a routerLink="/search" class="nav-link">All Abayas</a>
+      <a routerLink="/track-order" class="nav-link">Track Order</a>
+      <a routerLink="/" fragment="about" class="nav-link">Story</a>
+    </div>
+
+    <!-- RIGHT ACTION ICONS -->
+    <div class="nav-actions">
+      <!-- Search Trigger / Bar -->
+      <div class="nav-search-wrap">
+        <form (ngSubmit)="onSearchSubmit()" class="search-mini-form">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            name="searchQuery"
+            placeholder="Search couture..."
+            class="search-mini-input"
+          >
+          <button type="submit" class="search-mini-btn" title="Search">🔍</button>
+        </form>
+      </div>
+
+      <!-- Wishlist Link -->
+      <a routerLink="/wishlist" class="action-icon-link" title="My Wishlist">
+        <span class="icon">♥</span>
+        <span class="badge-count" *ngIf="wishlist.getWishlistCount() > 0">
+          {{ wishlist.getWishlistCount() }}
+        </span>
+      </a>
+
+      <!-- Account / Auth Links -->
+      <ng-container *ngIf="auth.isLoggedIn(); else guestLinks">
+        <a routerLink="/admin" *ngIf="auth.isAdmin()" class="nav-link nav-admin-badge desktop-only">
+          <span class="admin-dot"></span>
+          Admin
+        </a>
+        <a routerLink="/account" class="action-icon-link" title="My Account">
+          <span class="icon">👤</span>
+        </a>
+      </ng-container>
+
+      <ng-template #guestLinks>
+        <a routerLink="/login" class="nav-link nav-signin desktop-only">Sign In</a>
+      </ng-template>
+
+      <!-- SHOPPING BAG BUTTON -->
+      <a routerLink="/cart" class="cart-btn" title="Shopping Bag">
+        <span class="cart-icon">👜</span>
+        <span class="cart-label desktop-only">Bag</span>
+        <span class="cart-count-badge" *ngIf="cart.cartCount() > 0">{{ cart.cartCount() }}</span>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- MOBILE SLIDE DRAWER -->
+  <div class="mobile-drawer" [class.open]="mobileMenuOpen">
+    <div class="drawer-header">
+      <span class="brand-name">FAZURA</span>
+      <button class="drawer-close" (click)="closeMobileMenu()">✕</button>
+    </div>
+
+    <div class="drawer-search">
+      <form (ngSubmit)="onSearchSubmit()">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          name="mobileSearch"
+          placeholder="Search collections..."
+        >
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <div class="drawer-links">
+      <a routerLink="/" (click)="closeMobileMenu()">Home</a>
+      <a routerLink="/search" (click)="closeMobileMenu()">Browse All Abayas</a>
+      <a routerLink="/track-order" (click)="closeMobileMenu()">Track My Order</a>
+      <a routerLink="/wishlist" (click)="closeMobileMenu()">Saved Pieces ({{ wishlist.getWishlistCount() }})</a>
+
+      <div class="drawer-divider"></div>
+
+      <ng-container *ngIf="auth.isLoggedIn(); else mobileGuest">
+        <a routerLink="/account" (click)="closeMobileMenu()">My Account &amp; Orders</a>
+        <a routerLink="/admin" *ngIf="auth.isAdmin()" (click)="closeMobileMenu()" class="text-gold">Admin Dashboard</a>
+        <button class="drawer-logout" (click)="logout()">Sign Out</button>
+      </ng-container>
+
+      <ng-template #mobileGuest>
+        <a routerLink="/login" (click)="closeMobileMenu()">Sign In</a>
+        <a routerLink="/register" (click)="closeMobileMenu()">Create Account</a>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- DRAWER BACKDROP -->
+  <div class="drawer-backdrop" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+</nav>
+
+<!-- TOAST POPUP NOTIFICATION -->
+<div class="cart-notification" [class.show]="showNotif">
+  {{ notifMsg }}
+</div>

@@ -1,0 +1,148 @@
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-pattern"></div>
+  <div class="hero-accent"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">Fazura Abaya — Since 2020</div>
+
+    <h1>Timeless <em>Elegance</em><br>Woven in Grace</h1>
+
+    <p>
+      Discover our curated collection of premium abayas, crafted for the
+      modern woman who values tradition, comfort and effortless style.
+    </p>
+
+    <div class="hero-ctas">
+      <a class="btn-primary" routerLink="/" fragment="collections">
+        Shop Collections
+      </a>
+      <a class="btn-ghost" routerLink="/" fragment="featured">
+        View New Arrivals
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">{{ categories.length }}+</div>
+        <div class="stat-label">Collections</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4.9</div>
+        <div class="stat-label">Customer Rating</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">10K+</div>
+        <div class="stat-label">Happy Customers</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-img-frame">
+    <div class="hero-img-inner">
+      <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 22h20L12 2z" stroke="#c9a96e" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-bar">
+  <div class="marquee-track">
+    <span class="marquee-item">Free Shipping Over ₹5000</span>
+    <span class="marquee-item">Premium Fabrics</span>
+    <span class="marquee-item">Handcrafted Detailing</span>
+    <span class="marquee-item">Easy Returns</span>
+    <span class="marquee-item">Free Shipping Over ₹5000</span>
+    <span class="marquee-item">Premium Fabrics</span>
+    <span class="marquee-item">Handcrafted Detailing</span>
+    <span class="marquee-item">Easy Returns</span>
+  </div>
+</div>
+
+<!-- COLLECTIONS -->
+<section class="collections-section" id="collections">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow">Curated For You</div>
+      <div class="section-title">Our Collections</div>
+    </div>
+  </div>
+
+  <div class="collections-grid">
+    <a
+      class="coll-card"
+      *ngFor="let c of categories"
+      [routerLink]="['/category', c.id]"
+    >
+      <div class="coll-img" [style.background]="c.bg">
+        <span class="coll-emoji">{{ c.emoji }}</span>
+      </div>
+
+      <div class="coll-overlay">
+        <div class="coll-tag">{{ c.tag }}</div>
+        <div class="coll-name">{{ c.name }}</div>
+        <span class="coll-link">{{ c.description }}</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- FEATURED / NEW ARRIVALS -->
+<section class="featured-section" id="featured">
+  <div class="feat-section-title">New <span>Arrivals</span></div>
+
+  <div class="products-strip" *ngIf="featuredProducts.length; else noProducts">
+    <div
+      class="prod-card"
+      *ngFor="let p of featuredProducts"
+    >
+      <div class="prod-img">
+        <img [src]="p.imageUrl" [alt]="p.name">
+        <span class="prod-badge" *ngIf="p.badge">{{ p.badge }}</span>
+      </div>
+
+      <div class="prod-info">
+        <div class="prod-cat">{{ p.category }}</div>
+        <div class="prod-name">{{ p.name }}</div>
+        <p class="prod-desc">{{ p.description }}</p>
+
+        <div class="prod-footer">
+          <div class="prod-price"><span>₹</span>{{ p.price | number }}</div>
+          <button class="add-btn" (click)="addToCart(p)">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noProducts>
+    <p class="prod-desc">
+      New arrivals are on their way — check back soon.
+    </p>
+  </ng-template>
+</section>
+
+<!-- TRUST BAR -->
+<section class="trust-section">
+  <div class="trust-item">
+    <div class="trust-icon">✦</div>
+    <div class="trust-title">Premium Fabric</div>
+    <div class="trust-sub">Sourced for comfort and durability</div>
+  </div>
+  <div class="trust-item">
+    <div class="trust-icon">✧</div>
+    <div class="trust-title">Handcrafted</div>
+    <div class="trust-sub">Every piece finished with care</div>
+  </div>
+  <div class="trust-item">
+    <div class="trust-icon">♡</div>
+    <div class="trust-title">Easy Returns</div>
+    <div class="trust-sub">7-day hassle-free return policy</div>
+  </div>
+  <div class="trust-item">
+    <div class="trust-icon">♢</div>
+    <div class="trust-title">Secure Checkout</div>
+    <div class="trust-sub">Your payments are safe with us</div>
+  </div>
+</section>

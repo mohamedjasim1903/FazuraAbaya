@@ -1,0 +1,82 @@
+<div class="cart-page">
+
+  <!-- HEADER -->
+  <div class="cart-header">
+    <nav class="breadcrumb">
+      <a routerLink="/">Home</a>
+      <span>›</span>
+      <span>Shopping Bag</span>
+    </nav>
+    <h1>Your <em>Bag</em></h1>
+    <p>{{ cart.cartCount() }} {{ cart.cartCount() === 1 ? 'Piece' : 'Pieces' }} Selected</p>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-cart" *ngIf="cart.cartCount() === 0">
+    <div class="empty-icon">👜</div>
+    <h2>Your Bag is Empty</h2>
+    <p>Discover our curated collections and add something beautiful.</p>
+    <a routerLink="/" class="btn-primary">Explore Collections</a>
+  </div>
+
+  <!-- CART BODY -->
+  <div class="cart-body" *ngIf="cart.cartCount() > 0">
+
+    <!-- ITEMS -->
+    <div class="cart-items">
+      <div
+        class="cart-item"
+        *ngFor="let p of cart.getCart(); let i = index"
+      >
+        <!-- Image -->
+        <div class="item-img">
+          <img [src]="p.imageUrl" [alt]="p.name">
+        </div>
+
+        <!-- Details -->
+        <div class="item-details">
+          <div class="item-cat">{{ p.category }}</div>
+          <div class="item-name">{{ p.name }}</div>
+          <p class="item-desc">{{ p.description }}</p>
+        </div>
+
+        <!-- Price & Actions -->
+        <div class="item-right">
+          <div class="item-price">₹{{ p.price | number }}</div>
+          <button class="remove-btn" (click)="cart.remove(i)">Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <div class="cart-summary">
+      <div class="summary-title">Order Summary</div>
+
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span>₹{{ cart.getTotal() | number }}</span>
+      </div>
+      <div class="summary-row">
+        <span>Shipping</span>
+        <span class="free-ship" *ngIf="cart.getTotal() >= 5000">Free</span>
+        <span *ngIf="cart.getTotal() < 5000">₹{{ shippingCost | number }}</span>
+      </div>
+
+      <div class="summary-divider"></div>
+
+      <div class="summary-row summary-total">
+        <span>Total</span>
+        <span>₹{{ (cart.getTotal() >= 5000 ? cart.getTotal() : cart.getTotal() + shippingCost) | number }}</span>
+      </div>
+
+      <p class="free-ship-note" *ngIf="cart.getTotal() < 5000">
+        Add ₹{{ 5000 - cart.getTotal() | number }} more for free shipping
+      </p>
+
+      <a routerLink="/checkout" class="checkout-btn">Proceed to Checkout</a>
+      <a routerLink="/" class="continue-link">← Continue Shopping</a>
+    </div>
+
+  </div>
+
+</div>

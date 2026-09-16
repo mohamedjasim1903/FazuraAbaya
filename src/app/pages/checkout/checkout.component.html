@@ -1,0 +1,214 @@
+<div class="checkout-page">
+  <div class="checkout-header">
+    <div class="breadcrumb">
+      <a routerLink="/">Home</a>
+      <span>›</span>
+      <a routerLink="/cart">Bag</a>
+      <span>›</span>
+      <span>Checkout</span>
+    </div>
+    <h1>Secure <em>Checkout</em></h1>
+    <p>Encrypted luxury transaction & express boutique delivery</p>
+  </div>
+
+  <div class="checkout-body" *ngIf="!orderPlaced">
+    <div class="checkout-main">
+      <!-- 1. SHIPPING ADDRESS SECTION -->
+      <section class="checkout-section">
+        <div class="section-head flex-between">
+          <h2>1. Shipping Destination</h2>
+          <button type="button" class="text-btn" (click)="showAddressModal = true">
+            + Add New Address
+          </button>
+        </div>
+
+        <div class="empty-addr-notice" *ngIf="addresses.length === 0">
+          <p>You have no saved addresses yet.</p>
+          <button type="button" class="primary-btn" (click)="showAddressModal = true">
+            Add Shipping Address
+          </button>
+        </div>
+
+        <div class="address-selector-grid" *ngIf="addresses.length > 0">
+          <div
+            class="addr-option-card"
+            *ngFor="let addr of addresses"
+            [class.selected]="selectedAddressId === addr.id"
+            (click)="selectedAddressId = addr.id || ''"
+          >
+            <div class="addr-radio">
+              <input
+                type="radio"
+                name="selectedAddr"
+                [value]="addr.id"
+                [(ngModel)]="selectedAddressId"
+              >
+            </div>
+            <div class="addr-content">
+              <strong>{{ addr.fullName }}</strong>
+              <span class="phone-text">📞 {{ addr.phone }}</span>
+              <p class="addr-line">{{ addr.addressLine1 }}</p>
+              <p class="addr-line" *ngIf="addr.addressLine2">{{ addr.addressLine2 }}</p>
+              <p class="addr-line">{{ addr.city }}, {{ addr.state }} - {{ addr.postalCode }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. PAYMENT METHOD SECTION -->
+      <section class="checkout-section">
+        <div class="section-head flex-between">
+          <h2>2. Payment Selection</h2>
+          <a routerLink="/account" class="text-btn">+ Manage Payment Methods</a>
+        </div>
+
+        <div class="empty-methods" *ngIf="payment.paymentMethods().length === 0">
+          <p>No payment methods found. Add one in your account or proceed with default options.</p>
+          <a routerLink="/account" class="primary-btn">Set Up Payment</a>
+        </div>
+
+        <div class="method-options" *ngIf="payment.paymentMethods().length > 0">
+          <label
+            class="method-option"
+            *ngFor="let m of payment.paymentMethods()"
+            [class.selected]="selectedMethodId === m.id"
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              [value]="m.id"
+              [(ngModel)]="selectedMethodId"
+            >
+            <div class="method-meta">
+              <span class="m-type">{{ m.type | uppercase }}</span>
+              <strong>{{ m.label }}</strong>
+              <span class="m-display">{{ getMethodDisplay(m) }}</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- 3. BAG ITEMS REVIEW -->
+      <section class="checkout-section">
+        <div class="section-head">
+          <h2>3. Garments in this Order ({{ cart.getCart().length }})</h2>
+        </div>
+
+        <div class="cart-preview-list">
+          <div class="preview-item" *ngFor="let item of cart.getCart()">
+            <img [src]="item.imageUrl" [alt]="item.name" class="preview-thumb">
+            <div class="preview-details">
+              <h4>{{ item.name }}</h4>
+              <p class="variant-meta">
+                <span *ngIf="item.selectedSize">Size: {{ item.selectedSize }}</span>
+                <span *ngIf="item.selectedColor"> &bull; Color: {{ item.selectedColor }}</span>
+              </p>
+              <span class="item-qty">Qty: {{ item.quantity || 1 }}</span>
+            </div>
+            <div class="preview-price">
+              ₹{{ (item.price * (item.quantity || 1)) | number }}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- SIDEBAR / SUMMARY -->
+    <aside class="checkout-summary">
+      <div class="summary-card">
+        <h3>Order Summary</h3>
+
+        <!-- PROMO COUPON CODE -->
+        <div class="coupon-box">
+          <label>Have a Promotional Code?</label>
+          <div class="coupon-input-row" *ngIf="!appliedCouponCode">
+            <input
+              type="text"
+              [(ngModel)]="couponInput"
+              placeholder="e.g. WELCOME10"
+              class="coupon-input"
+            >
+            <button
+              type="button"
+              class="apply-btn"
+              (click)="applyCoupon()"
+              [disabled]="validatingCoupon || !couponInput.trim()"
+            >
+              {{ validatingCoupon ? '...' : 'Apply' }}
+            </button>
+          </div>
+
+          <div class="applied-coupon-pill" *ngIf="appliedCouponCode">
+            <span>🏷 <strong>{{ appliedCouponCode }}</strong> applied</span>
+            <button type="button" class="remove-coupon-btn" (click)="removeCoupon()">✕</button>
+          </div>
+
+          <p class="coupon-success" *ngIf="couponMessage">{{ couponMessage }}</p>
+          <p class="coupon-error" *ngIf="couponError">{{ couponError }}</p>
+        </div>
+
+        <div class="summary-rows">
+          <div class="summary-row">
+            <span>Bag Subtotal</span>
+            <span>₹{{ subtotal | number }}</span>
+          </div>
+
+          <div class="summary-row discount-row" *ngIf="discountAmount > 0">
+            <span>Promotion Discount</span>
+            <span>−₹{{ discountAmount | number }}</span>
+          </div>
+
+          <div class="summary-row">
+            <span>Shipping</span>
+            <span *ngIf="shipping === 0" class="free-shipping">Complimentary</span>
+            <span *ngIf="shipping > 0">₹{{ shipping | number }}</span>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row summary-total">
+            <span>Total to Pay</span>
+            <span>₹{{ total | number }}</span>
+          </div>
+        </div>
+
+        <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+        <button
+          class="place-order-btn"
+          [disabled]="placing || !selectedMethodId || !selectedAddressId"
+          (click)="placeOrder()"
+        >
+          {{ placing ? 'Securing Your Order...' : 'Place Order • ₹' + (total | number) }}
+        </button>
+
+        <p class="guarantee-text">
+          🔒 Encrypted 256-bit checkout. 100% authentic designer modesty wear.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ORDER SUCCESS STATE -->
+  <div class="order-placed-card" *ngIf="orderPlaced">
+    <div class="check-icon">✓</div>
+    <h2>Order Successfully Placed!</h2>
+    <p>Thank you for choosing Fazura Abaya. We are preparing your exquisite garments with highest care.</p>
+
+    <div class="placed-actions">
+      <a [routerLink]="['/order', createdOrderId]" class="primary-btn">
+        View Order & Printable Invoice
+      </a>
+      <a routerLink="/account" class="secondary-btn">
+        Go to My Account
+      </a>
+    </div>
+  </div>
+
+  <!-- ADDRESS MODAL -->
+  <app-address-form
+    *ngIf="showAddressModal"
+    (save)="onSaveNewAddress($event)"
+    (cancel)="showAddressModal = false"
+  ></app-address-form>
+</div>

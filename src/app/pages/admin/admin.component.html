@@ -1,0 +1,985 @@
+<div class="admin-page">
+  <div class="admin-container">
+
+    <!-- TOP BAR / HEADER -->
+    <header class="admin-topbar">
+      <div class="admin-brand">
+        <div class="admin-brand-icon">
+          <span>✦</span>
+        </div>
+        <div>
+          <div class="brand-title-row">
+            <h1>Fazura Abaya</h1>
+            <span class="badge-admin">ADMIN PORTAL</span>
+          </div>
+          <p class="admin-subtitle">Secure Administration &amp; Inventory Management</p>
+        </div>
+      </div>
+
+      <div class="admin-user-nav">
+        <div class="admin-user-info">
+          <span class="user-avatar">{{ auth.currentUser()?.email?.charAt(0)?.toUpperCase() || 'A' }}</span>
+          <div class="user-text">
+            <span class="user-email">{{ auth.currentUser()?.email }}</span>
+            <span class="user-role">Super Admin &middot; Verified</span>
+          </div>
+        </div>
+        <a routerLink="/" class="btn-store-link">
+          <span>&larr; View Store</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="admin-nav-tabs">
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab === 'dashboard'"
+        (click)="setTab('dashboard')"
+      >
+        <span class="tab-icon">📊</span>
+        <span>Dashboard Overview</span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab === 'products'"
+        (click)="setTab('products')"
+      >
+        <span class="tab-icon">👗</span>
+        <span>Products &amp; Inventory ({{ products.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab === 'add'"
+        (click)="setTab('add')"
+      >
+        <span class="tab-icon">➕</span>
+        <span>Add New Abaya</span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab === 'orders'"
+        (click)="setTab('orders')"
+      >
+        <span class="tab-icon">📦</span>
+        <span>Orders ({{ orders.length }})</span>
+        <span class="tab-pill" *ngIf="pendingOrdersCount > 0">{{ pendingOrdersCount }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab === 'users'"
+        (click)="setTab('users')"
+      >
+        <span class="tab-icon">👥</span>
+        <span>Users &amp; Roles ({{ users.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab === 'coupons'"
+        (click)="setTab('coupons')"
+      >
+        <span class="tab-icon">🏷️</span>
+        <span>Promotions &amp; Coupons ({{ coupons.length }})</span>
+      </button>
+    </nav>
+
+    <!-- ============================================================== -->
+    <!-- TAB 1: DASHBOARD OVERVIEW                                      -->
+    <!-- ============================================================== -->
+    <section *ngIf="activeTab === 'dashboard'" class="tab-content">
+      
+      <!-- STAT CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card stat-sales">
+          <div class="stat-header">
+            <span class="stat-label">Total Net Sales</span>
+            <span class="stat-icon-wrap">₹</span>
+          </div>
+          <div class="stat-value">₹{{ totalSales | number:'1.0-0' }}</div>
+          <div class="stat-footer positive">Revenue from confirmed customer orders</div>
+        </div>
+
+        <div class="stat-card stat-orders">
+          <div class="stat-header">
+            <span class="stat-label">Total Orders</span>
+            <span class="stat-icon-wrap">📦</span>
+          </div>
+          <div class="stat-value">{{ totalOrders }}</div>
+          <div class="stat-footer" [class.warning]="pendingOrdersCount > 0">
+            <strong>{{ pendingOrdersCount }}</strong> order(s) pending fulfillment
+          </div>
+        </div>
+
+        <div class="stat-card stat-products">
+          <div class="stat-header">
+            <span class="stat-label">Abaya Catalog</span>
+            <span class="stat-icon-wrap">👗</span>
+          </div>
+          <div class="stat-value">{{ totalProducts }}</div>
+          <div class="stat-footer">Across {{ categories.length }} active collections</div>
+        </div>
+
+        <div class="stat-card stat-stock">
+          <div class="stat-header">
+            <span class="stat-label">Low Stock Warning</span>
+            <span class="stat-icon-wrap">⚠️</span>
+          </div>
+          <div class="stat-value" [class.danger-text]="lowStockProducts.length > 0">{{ lowStockProducts.length }}</div>
+          <div class="stat-footer">Items with 5 or fewer units in stock</div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD TWO-COLUMN PANELS -->
+      <div class="dashboard-panels">
+        
+        <!-- RECENT ORDERS PANEL -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <h2>Recent Customer Orders</h2>
+              <p>Latest purchases placed across web store</p>
+            </div>
+            <button class="btn-panel-action" (click)="setTab('orders')">View All &rarr;</button>
+          </div>
+
+          <div *ngIf="recentOrders.length === 0" class="empty-state">
+            <p>No orders placed yet.</p>
+          </div>
+
+          <div *ngIf="recentOrders.length > 0" class="orders-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let order of recentOrders">
+                  <td>
+                    <span class="order-id-label">#{{ (order.id || 'order').slice(0, 8) }}</span>
+                    <div class="sub-text">{{ getOrderDate(order) | date:'mediumDate' }}</div>
+                  </td>
+                  <td>
+                    <div class="customer-email-cell">{{ order.userEmail }}</div>
+                    <div class="sub-text">{{ order.items.length }} item(s)</div>
+                  </td>
+
+                  <td>
+                    <strong>₹{{ order.total | number:'1.0-0' }}</strong>
+                  </td>
+                  <td>
+                    <span class="badge-payment" [class.paid]="order.paymentStatus === 'Paid' || !order.paymentStatus">
+                      {{ order.paymentStatus || 'Paid' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-badge status-{{ normalizeStatus(order.status).toLowerCase() }}">
+                      {{ normalizeStatus(order.status) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- QUICK ACTIONS & LOW STOCK -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <h2>Inventory Health</h2>
+              <p>Low stock monitor &amp; quick operations</p>
+            </div>
+            <button class="btn-panel-action" (click)="setTab('add')">+ Add Abaya</button>
+          </div>
+
+          <div class="quick-links-group">
+            <button class="quick-link-btn" (click)="setTab('add')">
+              <span class="ql-icon">➕</span>
+              <div class="ql-text">
+                <strong>Add New Abaya</strong>
+                <span>Upload photos &amp; manage sizes/colors</span>
+              </div>
+            </button>
+            <button class="quick-link-btn" (click)="setTab('products')">
+              <span class="ql-icon">📦</span>
+              <div class="ql-text">
+                <strong>Manage Inventory</strong>
+                <span>Update prices, stock &amp; descriptions</span>
+              </div>
+            </button>
+            <button class="quick-link-btn" (click)="setTab('users')">
+              <span class="ql-icon">🛡️</span>
+              <div class="ql-text">
+                <strong>Admin Roles</strong>
+                <span>Grant or manage adminFlag access</span>
+              </div>
+            </button>
+          </div>
+
+          <div class="panel-sub-section">
+            <h3 class="sub-heading">Low Stock Alert ({{ lowStockProducts.length }})</h3>
+            <div *ngIf="lowStockProducts.length === 0" class="all-stocked-note">
+              <span>✅</span> All products currently have healthy stock levels.
+            </div>
+            <div *ngIf="lowStockProducts.length > 0" class="low-stock-list">
+              <div class="low-stock-item" *ngFor="let item of lowStockProducts">
+                <img [src]="item.imageUrl" [alt]="item.name" class="mini-thumb" />
+                <div class="ls-info">
+                  <div class="ls-name">{{ item.name }}</div>
+                  <div class="ls-cat">{{ getCategoryName(item.category) }} &middot; ₹{{ item.price | number:'1.0-0' }}</div>
+                </div>
+                <span class="stock-pill low">Only {{ item.stock || 0 }} left</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- TAB 2: PRODUCTS & INVENTORY                                    -->
+    <!-- ============================================================== -->
+    <section *ngIf="activeTab === 'products'" class="tab-content">
+      
+      <div class="panel">
+        <div class="panel-header search-filter-header">
+          <div class="panel-title">
+            <h2>Product Catalog ({{ filteredProducts.length }})</h2>
+            <p>Manage all abayas, sizes, colors, pricing, and live inventory</p>
+          </div>
+          <button class="btn-primary-sm" (click)="setTab('add')">+ Add Abaya</button>
+        </div>
+
+        <!-- SEARCH AND FILTER CONTROLS -->
+        <div class="filter-bar">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              class="search-field"
+              [(ngModel)]="productSearch"
+              placeholder="Search products by title, category, description..."
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Category:</label>
+            <select class="filter-select" [(ngModel)]="productCategoryFilter">
+              <option value="all">All Categories</option>
+              <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div *ngIf="filteredProducts.length === 0" class="empty-state">
+          <p>No products found matching your search or filters.</p>
+        </div>
+
+        <!-- PRODUCTS LIST -->
+        <div class="products-list-grid" *ngIf="filteredProducts.length > 0">
+          <div class="product-item-card" *ngFor="let p of filteredProducts">
+            
+            <!-- VIEW MODE -->
+            <ng-container *ngIf="editingId !== p.id">
+              <div class="product-card-top">
+                <div class="prod-thumb-container">
+                  <img [src]="p.imageUrl" [alt]="p.name" class="prod-thumb" />
+                  <span class="prod-badge-tag" *ngIf="p.badge">{{ p.badge }}</span>
+                </div>
+
+                <div class="prod-details">
+                  <div class="prod-cat-pill">{{ getCategoryName(p.category) }}</div>
+                  <h3 class="prod-title">{{ p.name }}</h3>
+                  <div class="prod-price">₹{{ p.price | number:'1.0-0' }}</div>
+                  <p class="prod-desc" *ngIf="p.description">{{ p.description }}</p>
+
+                  <div class="prod-specs-row">
+                    <div class="specs-group" *ngIf="p.sizes && p.sizes.length">
+                      <span class="spec-label">Sizes:</span>
+                      <span class="chip-size" *ngFor="let sz of p.sizes">{{ sz }}</span>
+                    </div>
+                    <div class="specs-group" *ngIf="p.colors && p.colors.length">
+                      <span class="spec-label">Colors:</span>
+                      <span class="chip-color" *ngFor="let cl of p.colors">{{ cl }}</span>
+                    </div>
+                    <div class="specs-group">
+                      <span class="spec-label">Stock:</span>
+                      <span class="stock-pill" [class.low]="(p.stock || 0) <= 5">
+                        {{ p.stock ?? 'Unspecified' }} units
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="product-card-actions">
+                <button type="button" class="btn-ghost-sm" (click)="startEdit(p)">
+                  ✏️ Edit Details
+                </button>
+                <button type="button" class="btn-danger-sm" (click)="removeProduct(p.id)">
+                  🗑️ Delete
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- EDIT MODE FORM -->
+            <ng-container *ngIf="editingId === p.id">
+              <div class="edit-product-form">
+                <div class="form-header-row">
+                  <h4>Editing: {{ p.name }}</h4>
+                  <span class="badge-edit">EDITING</span>
+                </div>
+
+                <div class="form-row-grid">
+                  <div class="form-group">
+                    <label>Product Title</label>
+                    <input type="text" [(ngModel)]="editDraft.name" placeholder="Abaya name" />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" [(ngModel)]="editDraft.price" placeholder="2999" />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Collection / Category</label>
+                    <select [(ngModel)]="editDraft.category">
+                      <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Stock Quantity</label>
+                    <input type="number" [(ngModel)]="editDraft.stock" placeholder="20" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Highlight Badge (optional)</label>
+                  <input type="text" [(ngModel)]="editDraft.badge" placeholder="BESTSELLER, NEW, LUXURY" />
+                </div>
+
+                <div class="form-group">
+                  <label>Image URL</label>
+                  <input type="text" [(ngModel)]="editDraft.imageUrl" placeholder="https://..." />
+                </div>
+
+                <div class="form-group">
+                  <label>Description</label>
+                  <textarea [(ngModel)]="editDraft.description" rows="3" placeholder="Fabric, embroidery, silhouette details..."></textarea>
+                </div>
+
+                <!-- SIZES SELECTION IN EDIT -->
+                <div class="form-group" *ngIf="editDraft.sizes">
+                  <label>Available Sizes</label>
+                  <div class="chips-selector">
+                    <button
+                      type="button"
+                      *ngFor="let sz of availableSizes"
+                      class="chip-select-btn"
+                      [class.selected]="editDraft.sizes.includes(sz)"
+                      (click)="toggleSize(sz, editDraft.sizes)"
+                    >{{ sz }}</button>
+                  </div>
+                </div>
+
+                <!-- COLORS SELECTION IN EDIT -->
+                <div class="form-group" *ngIf="editDraft.colors">
+                  <label>Available Colors</label>
+                  <div class="chips-selector">
+                    <button
+                      type="button"
+                      *ngFor="let cl of availableColors"
+                      class="chip-select-btn"
+                      [class.selected]="editDraft.colors.includes(cl)"
+                      (click)="toggleColor(cl, editDraft.colors)"
+                    >{{ cl }}</button>
+                  </div>
+                </div>
+
+                <div class="edit-form-buttons">
+                  <button type="button" class="btn-primary-sm" (click)="saveEdit(p.id!)">
+                    💾 Save Changes
+                  </button>
+                  <button type="button" class="btn-ghost-sm" (click)="cancelEdit()">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- TAB 3: ADD NEW ABAYA                                           -->
+    <!-- ============================================================== -->
+    <section *ngIf="activeTab === 'add'" class="tab-content">
+      
+      <div class="panel form-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2>Add New Abaya Design</h2>
+            <p>Upload new luxury abaya designs directly to Firestore &amp; Firebase Storage</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="addProduct()" class="admin-form">
+
+          <div class="form-layout-2col">
+            
+            <!-- LEFT COLUMN: MAIN DETAILS -->
+            <div class="form-col">
+              
+              <div class="form-group">
+                <label>Abaya Title <span class="req">*</span></label>
+                <input
+                  type="text"
+                  [(ngModel)]="product.name"
+                  name="name"
+                  placeholder="e.g. Royal Emerald Dubai Hand-Beaded Abaya"
+                  required
+                />
+              </div>
+
+              <div class="form-row-grid">
+                <div class="form-group">
+                  <label>Price (₹) <span class="req">*</span></label>
+                  <input
+                    type="number"
+                    [(ngModel)]="product.price"
+                    name="price"
+                    placeholder="3499"
+                    required
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>Collection <span class="req">*</span></label>
+                  <select [(ngModel)]="product.category" name="category" required>
+                    <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row-grid">
+                <div class="form-group">
+                  <label>Initial Stock Inventory</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="product.stock"
+                    name="stock"
+                    placeholder="25"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>Highlight Badge (optional)</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="product.badge"
+                    name="badge"
+                    placeholder="e.g. BESTSELLER, NEW"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Detailed Description</label>
+                <textarea
+                  [(ngModel)]="product.description"
+                  name="description"
+                  rows="4"
+                  placeholder="Crafted from premium Nida fabric with intricate crystal beadwork along the sleeves and hemline..."
+                ></textarea>
+              </div>
+
+              <!-- SIZES -->
+              <div class="form-group" *ngIf="product.sizes">
+                <label>Available Abaya Sizes</label>
+                <div class="chips-selector">
+                  <button
+                    type="button"
+                    *ngFor="let sz of availableSizes"
+                    class="chip-select-btn"
+                    [class.selected]="product.sizes.includes(sz)"
+                    (click)="toggleSize(sz, product.sizes)"
+                  >{{ sz }}</button>
+                </div>
+                <small class="field-hint">Click to toggle sizes included for this abaya.</small>
+              </div>
+
+              <!-- COLORS -->
+              <div class="form-group" *ngIf="product.colors">
+                <label>Available Color Options</label>
+                <div class="chips-selector">
+                  <button
+                    type="button"
+                    *ngFor="let cl of availableColors"
+                    class="chip-select-btn"
+                    [class.selected]="product.colors.includes(cl)"
+                    (click)="toggleColor(cl, product.colors)"
+                  >{{ cl }}</button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: IMAGE UPLOAD & PREVIEW -->
+            <div class="form-col image-col">
+              
+              <div class="image-upload-box">
+                <label>Product Imagery <span class="req">*</span></label>
+                
+                <div class="drop-zone" (click)="fileInput.click()">
+                  <input
+                    #fileInput
+                    type="file"
+                    accept="image/*"
+                    (change)="onFileSelected($event)"
+                    style="display: none"
+                  />
+                  
+                  <div *ngIf="imagePreviewUrl" class="preview-container">
+                    <img [src]="imagePreviewUrl" alt="Abaya preview" class="live-preview-img" />
+                    <span class="change-overlay">Click to change file</span>
+                  </div>
+
+                  <div *ngIf="!imagePreviewUrl && product.imageUrl" class="preview-container">
+                    <img [src]="product.imageUrl" alt="Abaya preview" class="live-preview-img" />
+                    <span class="change-overlay">Using direct URL</span>
+                  </div>
+
+                  <div *ngIf="!imagePreviewUrl && !product.imageUrl" class="empty-drop">
+                    <span class="upload-icon">📸</span>
+                    <span class="upload-title">Select Abaya Photograph</span>
+                    <span class="upload-subtitle">JPG, PNG, WebP up to 10MB</span>
+                    <span class="btn-browse">Browse Device</span>
+                  </div>
+                </div>
+
+                <div class="direct-url-fallback">
+                  <label>Or provide direct image URL:</label>
+                  <input
+                    type="url"
+                    [(ngModel)]="product.imageUrl"
+                    name="imageUrl"
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- SUBMIT ACTION -->
+          <div class="form-actions-bar">
+            <button type="submit" class="btn-submit-main" [disabled]="uploading">
+              <span *ngIf="!uploading">✨ Publish Abaya to Catalog</span>
+              <span *ngIf="uploading">⏳ Uploading to Firebase Storage...</span>
+            </button>
+          </div>
+
+          <div class="form-alert-msg" [class.success]="messageType === 'success'" [class.error]="messageType === 'error'" *ngIf="message">
+            {{ message }}
+          </div>
+
+          <!-- STORAGE RULES HELPER -->
+          <div class="storage-help-box" *ngIf="storageError">
+            <div class="help-title">🛠️ Quick Fix for Firebase Storage Permission (storage/unauthorized):</div>
+            <p>Your Firebase Storage has default locked rules. To allow uploading photos directly:</p>
+            <ol>
+              <li>Go to <a href="https://console.firebase.google.com/project/fazura-abaya/storage/rules" target="_blank" rel="noopener">Firebase Console &rarr; Storage &rarr; Rules</a></li>
+              <li>Paste the contents of <code>storage.rules</code> (already created in your project):</li>
+            </ol>
+            <pre class="code-snippet">rules_version = '2';
+service firebase.storage &#123;
+  match /b/&#123;bucket&#125;/o &#123;
+    match /products/&#123;allPaths=**&#125; &#123;
+      allow read: if true;
+      allow write: if request.auth != null;
+    &#125;
+  &#125;
+&#125;</pre>
+            <p class="help-note">3. Click <strong>Publish</strong> in Firebase Console. You will immediately be able to upload images without 403 errors!</p>
+          </div>
+
+
+        </form>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- TAB 4: ORDERS & SHIPMENTS                                      -->
+    <!-- ============================================================== -->
+    <section *ngIf="activeTab === 'orders'" class="tab-content">
+      
+      <div class="panel">
+        
+        <div class="panel-header search-filter-header">
+          <div class="panel-title">
+            <h2>Customer Orders ({{ filteredOrders.length }})</h2>
+            <p>Track payments, fulfillment, and customer delivery lifecycle</p>
+          </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              class="search-field"
+              [(ngModel)]="orderSearch"
+              placeholder="Search by customer email, order ID..."
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Order Status:</label>
+            <select class="filter-select" [(ngModel)]="orderStatusFilter">
+              <option value="all">All Orders</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+
+        <div *ngIf="filteredOrders.length === 0" class="empty-state">
+          <p>No customer orders found matching current criteria.</p>
+        </div>
+
+        <!-- ORDERS TABLE -->
+        <div class="orders-table-wrapper" *ngIf="filteredOrders.length > 0">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order ID &amp; Date</th>
+                <th>Customer</th>
+                <th>Items Ordered</th>
+                <th>Total (₹)</th>
+                <th>Payment Status</th>
+                <th>Order Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let o of filteredOrders">
+                <td>
+                  <span class="order-id-label">#{{ (o.id || 'ord').slice(0, 8) }}</span>
+                  <div class="sub-text">{{ getOrderDate(o) | date:'medium' }}</div>
+                </td>
+                <td>
+                  <div class="customer-email-cell">{{ o.userEmail }}</div>
+                  <div class="sub-text" *ngIf="o.customerName">{{ o.customerName }}</div>
+                </td>
+                <td>
+                  <div class="items-thumb-row">
+                    <span *ngFor="let item of (o.items || []).slice(0, 3)" class="item-pill">
+                      {{ item.name }} (x{{ item.quantity || 1 }})
+                    </span>
+                    <span *ngIf="(o.items?.length || 0) > 3" class="more-pill">
+                      +{{ o.items.length - 3 }} more
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <strong>₹{{ o.total | number:'1.0-0' }}</strong>
+                  <div class="sub-text">{{ o.paymentLabel }}</div>
+                </td>
+                <td>
+                  <select
+                    class="status-dropdown payment-dropdown"
+                    [ngModel]="o.paymentStatus || 'Paid'"
+                    (ngModelChange)="updateOrderPaymentStatus(o.id, $event)"
+                  >
+                    <option *ngFor="let ps of paymentStatusOptions" [value]="ps">{{ ps }}</option>
+                  </select>
+                </td>
+                <td>
+                  <select
+                    class="status-dropdown status-select-{{ normalizeStatus(o.status).toLowerCase() }}"
+                    [ngModel]="normalizeStatus(o.status)"
+                    (ngModelChange)="updateOrderStatus(o.id, $event)"
+                  >
+                    <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+                  </select>
+                </td>
+                <td>
+                  <button type="button" class="btn-ghost-sm" (click)="viewOrderDetails(o)">
+                    👁️ View Details
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- ORDER DETAILS MODAL -->
+      <div class="modal-backdrop" *ngIf="selectedOrder" (click)="closeOrderDetails()">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <h3>Order #{{ (selectedOrder.id || '').slice(0, 10) }}</h3>
+              <p class="modal-subtitle">{{ getOrderDate(selectedOrder) | date:'medium' }}</p>
+            </div>
+            <button type="button" class="btn-close-modal" (click)="closeOrderDetails()">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            
+            <div class="detail-section">
+              <h4>Customer Information</h4>
+              <div class="detail-grid">
+                <div><strong>Email:</strong> {{ selectedOrder.userEmail }}</div>
+                <div><strong>User ID:</strong> {{ selectedOrder.userId }}</div>
+                <div><strong>Payment Method:</strong> {{ selectedOrder.paymentLabel }}</div>
+                <div><strong>Payment Status:</strong> {{ selectedOrder.paymentStatus || 'Paid' }}</div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>Items in this Order ({{ selectedOrder.items.length }})</h4>
+              <div class="order-items-detail-list">
+
+                <div class="detail-item-row" *ngFor="let it of selectedOrder.items">
+                  <img [src]="it.imageUrl" [alt]="it.name" class="detail-thumb" />
+                  <div class="detail-item-info">
+                    <strong>{{ it.name }}</strong>
+                    <div class="sub-text">
+                      <span *ngIf="it.size">Size: {{ it.size }} &middot; </span>
+                      <span *ngIf="it.color">Color: {{ it.color }}</span>
+                    </div>
+                  </div>
+                  <div class="detail-item-price">
+                    ₹{{ it.price | number:'1.0-0' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="order-cost-breakdown">
+              <div class="cost-row">
+                <span>Subtotal:</span>
+                <span>₹{{ selectedOrder.subtotal | number:'1.0-0' }}</span>
+              </div>
+              <div class="cost-row">
+                <span>Shipping:</span>
+                <span>{{ selectedOrder.shipping === 0 ? 'FREE' : '₹' + (selectedOrder.shipping | number:'1.0-0') }}</span>
+              </div>
+              <div class="cost-row total-row">
+                <span>Grand Total:</span>
+                <span>₹{{ selectedOrder.total | number:'1.0-0' }}</span>
+              </div>
+            </div>
+
+            <div class="detail-status-controls">
+              <label>Update Delivery Status:</label>
+              <select
+                class="status-dropdown"
+                [ngModel]="normalizeStatus(selectedOrder.status)"
+                (ngModelChange)="updateOrderStatus(selectedOrder.id, $event)"
+              >
+                <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-ghost-sm" (click)="closeOrderDetails()">Done</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- TAB 5: USER & ROLE MANAGEMENT                                  -->
+    <!-- ============================================================== -->
+    <section *ngIf="activeTab === 'users'" class="tab-content">
+      
+      <div class="panel">
+        
+        <div class="panel-header search-filter-header">
+          <div class="panel-title">
+            <h2>Registered Users &amp; Administrators ({{ filteredUsers.length }})</h2>
+            <p>Manage adminFlag privileges safely across customer and administrative accounts</p>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              class="search-field"
+              [(ngModel)]="userSearch"
+              placeholder="Search users by email or display name..."
+            />
+          </div>
+        </div>
+
+        <div *ngIf="filteredUsers.length === 0" class="empty-state">
+          <p>No users found matching your search.</p>
+        </div>
+
+        <div class="users-grid" *ngIf="filteredUsers.length > 0">
+          <div class="user-card" *ngFor="let u of filteredUsers">
+            
+            <div class="user-card-header">
+              <div class="user-avatar-circle" [class.admin-circle]="isUserAdmin(u)">
+                {{ (u.name || u.email || 'U').charAt(0).toUpperCase() }}
+              </div>
+              <div class="user-card-info">
+                <div class="user-card-name">{{ u.name || 'Fazura Customer' }}</div>
+                <div class="user-card-email">{{ u.email }}</div>
+              </div>
+              <span class="role-badge" [class.badge-admin-role]="isUserAdmin(u)" [class.badge-user-role]="!isUserAdmin(u)">
+                {{ isUserAdmin(u) ? 'ADMIN' : 'CUSTOMER' }}
+              </span>
+            </div>
+
+            <div class="user-card-body">
+              <div class="user-meta-item">
+                <span class="meta-label">User ID:</span>
+                <span class="meta-val">{{ u.id }}</span>
+              </div>
+              <div class="user-meta-item">
+                <span class="meta-label">Admin Flag Status:</span>
+                <span class="meta-val" [class.text-gold]="isUserAdmin(u)">
+                  {{ isUserAdmin(u) ? 'Enabled (Full Admin Rights)' : 'Disabled (Standard Customer)' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="user-card-actions">
+              <button
+                type="button"
+                class="btn-role-toggle"
+                [class.btn-revoke]="isUserAdmin(u)"
+                [class.btn-grant]="!isUserAdmin(u)"
+                [disabled]="u.id === auth.currentUser()?.userId"
+                (click)="toggleAdmin(u)"
+              >
+                {{ u.id === auth.currentUser()?.userId ? 'Current Active Session' : (isUserAdmin(u) ? 'Revoke Admin Privileges' : 'Grant Admin Privileges') }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- TAB 6: PROMOTIONS & COUPONS                                     -->
+    <!-- ============================================================== -->
+    <section class="admin-tab-content" *ngIf="activeTab === 'coupons'">
+      <div class="section-banner">
+        <div class="banner-text">
+          <h2>Promotional Coupons &amp; Discount Engine</h2>
+          <p>Create and manage discount codes for marketing campaigns and loyal customers.</p>
+        </div>
+      </div>
+
+      <div class="add-coupon-card" style="background:#fff; padding:24px; border-radius:12px; border:1px solid #eae3da; margin-bottom:24px;">
+        <h3 style="margin-top:0; font-family:'Playfair Display',serif;">Create New Discount Coupon</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; text-transform:uppercase; font-weight:600; margin-bottom:6px;">Coupon Code *</label>
+            <input type="text" [(ngModel)]="newCoupon.code" placeholder="e.g. EID2026" style="width:100%; padding:10px; border:1px solid #dcd4ca; border-radius:6px; text-transform:uppercase;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; text-transform:uppercase; font-weight:600; margin-bottom:6px;">Discount Type</label>
+            <select [(ngModel)]="newCoupon.discountType" style="width:100%; padding:10px; border:1px solid #dcd4ca; border-radius:6px;">
+              <option value="percentage">Percentage Off (%)</option>
+              <option value="fixed">Flat Amount Off (₹)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; text-transform:uppercase; font-weight:600; margin-bottom:6px;">Discount Value *</label>
+            <input type="number" [(ngModel)]="newCoupon.discountValue" style="width:100%; padding:10px; border:1px solid #dcd4ca; border-radius:6px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; text-transform:uppercase; font-weight:600; margin-bottom:6px;">Min Order Value (₹)</label>
+            <input type="number" [(ngModel)]="newCoupon.minOrderAmount" style="width:100%; padding:10px; border:1px solid #dcd4ca; border-radius:6px;">
+          </div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; text-transform:uppercase; font-weight:600; margin-bottom:6px;">Description</label>
+          <input type="text" [(ngModel)]="newCoupon.description" placeholder="e.g. 15% off Ramadan Special" style="width:100%; padding:10px; border:1px solid #dcd4ca; border-radius:6px;">
+        </div>
+        <button type="button" class="btn-primary" (click)="saveNewCoupon()" [disabled]="!newCoupon.code?.trim()">
+          Save &amp; Activate Coupon
+        </button>
+      </div>
+
+      <div class="coupons-table-wrap" style="background:#fff; padding:24px; border-radius:12px; border:1px solid #eae3da;">
+        <h3 style="margin-top:0; font-family:'Playfair Display',serif; margin-bottom:16px;">Active &amp; Historical Coupons ({{ coupons.length }})</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:14px;">
+          <thead>
+            <tr style="background:#faf8f5; text-align:left; border-bottom:2px solid #eee;">
+              <th style="padding:12px;">Code</th>
+              <th style="padding:12px;">Discount</th>
+              <th style="padding:12px;">Min Order</th>
+              <th style="padding:12px;">Description</th>
+              <th style="padding:12px;">Status</th>
+              <th style="padding:12px; text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of coupons" style="border-bottom:1px solid #eee;">
+              <td style="padding:12px;"><strong>{{ c.code }}</strong></td>
+              <td style="padding:12px;">{{ c.discountType === 'percentage' ? (c.discountValue + '%') : ('₹' + c.discountValue) }}</td>
+              <td style="padding:12px;">₹{{ c.minOrderAmount | number }}</td>
+              <td style="padding:12px; color:#666;">{{ c.description || '—' }}</td>
+              <td style="padding:12px;"><span style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:4px; font-weight:600; font-size:11px;">ACTIVE</span></td>
+              <td style="padding:12px; text-align:right;">
+                <button type="button" (click)="deleteCoupon(c.code)" style="background:none; border:none; color:#c00; cursor:pointer; font-weight:600;">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="coupons.length === 0">
+              <td colspan="6" style="padding:24px; text-align:center; color:#888;">No coupons created yet. Default codes WELCOME10 and FAZURA500 are always valid in checkout.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
