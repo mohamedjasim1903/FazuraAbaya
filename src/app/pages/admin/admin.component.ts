@@ -65,7 +65,7 @@ export class AdminComponent implements OnInit {
     'Refunded'
   ];
 
-  // --- Coupons state ---
+ 
   coupons: Coupon[] = [];
   newCoupon: Partial<Coupon> = {
     code: '',
