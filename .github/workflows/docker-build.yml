@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build, Push and Deploy
 
 on:
   push:
@@ -10,19 +10,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Get the latest code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 3. Build Docker image
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:latest .
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:latest .
 
+      # 4. Push image to Docker Hub
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:latest
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:latest
 
-      # end
+      # 5. Deploy to AWS EC2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:latest
+
+            sudo docker stop fazura-abaya || true
+            sudo docker rm fazura-abaya || true
+
+            sudo docker run -d \
+              --restart unless-stopped \
+              --name fazura-abaya \
+              -p 80:80 \
+              ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:latest
+
+            sudo docker ps
