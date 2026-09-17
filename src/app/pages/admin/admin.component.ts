@@ -10,6 +10,7 @@ import { AuthService } from '../../services/auth.service';
 
 import { Product } from '../../models/product.model';
 import { Order, OrderStatus } from '../../models/order.model';
+import { UserProfile } from '../../models/user.model';
 
 export type AdminTab = 'dashboard' | 'products' | 'add' | 'orders' | 'users' | 'coupons';
 
@@ -39,7 +40,7 @@ export class AdminComponent implements OnInit {
   // Available options
   readonly availableSizes: string[] = ['50', '52', '54', '56', '58', '60'];
   readonly availableColors: string[] = ['Black', 'Midnight Blue', 'Olive Green', 'Deep Maroon', 'Champagne Gold', 'Dusty Rose', 'Pure White'];
-  
+
   categories: CategoryOption[] = [
     { id: 'dubai', name: 'Dubai Abaya' },
     { id: 'kaftan', name: 'Kaftan Abaya' },
@@ -65,7 +66,7 @@ export class AdminComponent implements OnInit {
     'Refunded'
   ];
 
- 
+
   coupons: Coupon[] = [];
   newCoupon: Partial<Coupon> = {
     code: '',
@@ -118,7 +119,7 @@ export class AdminComponent implements OnInit {
     private userService: UserService,
     private couponService: CouponService,
     public auth: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const currentUser = this.auth.currentUser();
